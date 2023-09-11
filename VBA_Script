@@ -2,63 +2,104 @@ Option Explicit
 
 Sub Stock_information()
 
-'Declared and set as a worksheet
-Dim ws As Worksheet
-
-'Loop through all the stocks for up to one year
-For Each ws In Worksheets
-
-    'Column Headings
-ws.Range("I1").Value = "Ticker"
-ws.Range("J1").Value = "Yearly Change"
-ws.Range("K1").Value = "Percent Change"
-ws.Range("L1").Value = "Total Stock Volume"
+    Const FIRST_DATA_ROW As Integer = 2
+    Const TICKER_COL As Integer = 1
+    Const OPEN_COL As Integer = 3
+    Const CLOSED_COL As Integer = 6
+    Const INPUT_VOL_COL As Integer = 7
     
-ws.Range("P1").Value = "Ticker"
-ws.Range("Q1").Value = "Value"
-ws.Range("O2").Value = "Greatest % Increase"
-ws.Range("O3").Value = "Greatest % Decrease"
-ws.Range("O4").Value = "Greatest Total Volume"
+    'Declared and set as a worksheet
+    Dim ws As Worksheet
+    Dim ticker As String
+    Dim ticker_volume As LongLong
+    Dim Lastrow As Long
+    Dim input_row As Long
+    Dim open_price As Double
+    Dim close_price As Double
+    Dim price_change As Double
+    Dim price_change_fraction As Double
+    Dim output_row As Long
+    Dim greatest_percent_increase_ticker As String
+    Dim greatest_percent_increase As Double
+    Dim greatest_percent_decrease_ticker As String
+    Dim greatest_percent_decrease As Double
+    Dim greatest_total_volume_ticker As String
+    Dim greatest_total_volume As LongLong
     
-Dim ticker As String
-ticker = " "
-Dim Ticker_volume As Integer
-Ticker_volume = 0
+    
+    'Loop through all the stocks for up to one year
+    For Each ws In Worksheets
+        ws.Activate
+        
+        Lastrow = ws.Cells(1, TICKER_COL).End(xlDown).Row
+        
+        'Column Headings
+        Range("I1").Value = "Ticker"
+        Range("J1").Value = "Yearly Change"
+        Range("K1").Value = "Percent Change"
+        Range("L1").Value = "Total Stock Volume"
+            
+        Range("P1").Value = "Ticker"
+        Range("Q1").Value = "Value"
+        Range("O2").Value = "Greatest % Increase"
+        Range("O3").Value = "Greatest % Decrease"
+        Range("O4").Value = "Greatest Total Volume"
+            
+        'Set Up for first stock
+        ticker_volume = 0
+        open_price = Cells(FIRST_DATA_ROW, OPEN_COL)
+        output_row = FIRST_DATA_ROW
+        greatest_percent_increase_ticker = " "
+        greatest_percent_increase = 0
+        greatest_percent_decrease_ticker = " "
+        greatest_percent_decrease = 0
+        greatest_total_volume_ticker = " "
+        greatest_total_volume = 0
+        
+        For input_row = FIRST_DATA_ROW To Lastrow
+            ticker = ws.Cells(input_row, TICKER_COL).Value
+            ticker_volume = ticker_volume + ws.Cells(input_row, INPUT_VOL_COL).Value
+        
+            'If last row of current stock
+            If ws.Cells(input_row + 1, TICKER_COL).Value <> ticker Then
+                
+                'input
+                close_price = ws.Cells(input_row, CLOSED_COL).Value
+                
+                'calculations
+                price_change = close_price - open_price
+                price_change_fraction = (price_change / open_price)
+                If (price_change_fraction > greatest_percent_increase) Then
+                    greatest_percent_increase = price_change_fraction > greatest_percent_increase
+                    greatest_percent_increase_ticker = greatest_percent_increase
+                End If
 
-Dim Lastrow As Long
-Dim i As Long
-Dim j As Integer
-
-Lastrow = ws.Cells(Rows.Count, 1).End(xlUp).Row
-
-Dim open_price As Double
-open_price = 0
-Dim close_price As Double
-close_price = 0
-Dim price_change As Double
-price_change = 0
-Dim price_change_percent As Double
-price_change_percent = 0
-
-Dim TickerRow As Long: TickerRow = 1
-
-For i = 2 To Lastrow
-
-If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
-TickerRow = TickerRow + 1
-ticker = ws.Cells(i, 1).Value
-ws.Cells(TickerRow, "I").Value = ticker
-
-close_price = ws.Cells(i, 6).Value
-price_change_percent = close_price - open_price
-
-ElseIf open_price <> 0 Then
-price_change_percent = (price_change_percent / open_price) * 100
-
-End If
-
-Next i
-
-Next ws
+                
+                'output
+                Cells(output_row, 9).Value = ticker
+                Cells(output_row, 10).Value = price_change
+                Cells(output_row, 11).Value = FormatPercent(price_change_fraction)
+                Cells(output_row, 12).Value = ticker_volume
+                
+                'prepare for next stock
+                ticker_volume = 0
+                open_price = Cells(input_row + 1, OPEN_COL)
+                output_row = output_row + 1
+                
+            End If
+            
+        Next input_row
+                'Output Greatest/Least
+                Range("Q2") = greatest_percent_increase
+                Range("P2") = greatest_percent_increase_ticker
+            
+                'Prepare for next stock
+                greatest_percent_increase_ticker = " "
+                greatest_percent_increase = 0
+                greatest_percent_decrease_ticker = " "
+                greatest_percent_decrease = 0
+                greatest_total_volume_ticker = " "
+                greatest_total_volume = 0
+    Next ws
 
 End Sub
