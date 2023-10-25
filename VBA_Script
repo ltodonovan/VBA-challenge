@@ -7,6 +7,9 @@ Sub Stock_information()
     Const OPEN_COL As Integer = 3
     Const CLOSED_COL As Integer = 6
     Const INPUT_VOL_COL As Integer = 7
+    Const COLOR_GREEN As Integer = 4
+    Const COLOR_RED As Integer = 3
+    
     
     'Declared and set as a worksheet
     Dim ws As Worksheet
@@ -49,12 +52,10 @@ Sub Stock_information()
         ticker_volume = 0
         open_price = Cells(FIRST_DATA_ROW, OPEN_COL)
         output_row = FIRST_DATA_ROW
-        greatest_percent_increase_ticker = " "
-        greatest_percent_increase = 0
-        greatest_percent_decrease_ticker = " "
-        greatest_percent_decrease = 0
-        greatest_total_volume_ticker = " "
-        greatest_total_volume = 0
+        
+        greatest_percent_increase = -999
+        greatest_percent_decrease = 999
+        greatest_total_volume = -999
         
         For input_row = FIRST_DATA_ROW To Lastrow
             ticker = ws.Cells(input_row, TICKER_COL).Value
@@ -70,14 +71,26 @@ Sub Stock_information()
                 price_change = close_price - open_price
                 price_change_fraction = (price_change / open_price)
                 If (price_change_fraction > greatest_percent_increase) Then
-                    greatest_percent_increase = price_change_fraction > greatest_percent_increase
-                    greatest_percent_increase_ticker = greatest_percent_increase
+                    greatest_percent_increase = price_change_fraction
+                    greatest_percent_increase_ticker = ticker
                 End If
-
+                If (price_change_fraction < greatest_percent_decrease) Then
+                    greatest_percent_decrease = price_change_fraction
+                    greatest_percent_decrease_ticker = ticker
+                End If
+                If (ticker_volume > greatest_total_volume) Then
+                    greatest_total_volume = ticker_volume
+                    greatest_total_volume_ticker = ticker
+                End If
                 
                 'output
                 Cells(output_row, 9).Value = ticker
                 Cells(output_row, 10).Value = price_change
+                If price_change > 0 Then
+                    Cells(output_row, 10).Interior.ColorIndex = COLOR_GREEN
+                Else
+                    Cells(output_row, 10).Interior.ColorIndex = COLOR_RED
+                End If
                 Cells(output_row, 11).Value = FormatPercent(price_change_fraction)
                 Cells(output_row, 12).Value = ticker_volume
                 
@@ -90,16 +103,13 @@ Sub Stock_information()
             
         Next input_row
                 'Output Greatest/Least
-                Range("Q2") = greatest_percent_increase
-                Range("P2") = greatest_percent_increase_ticker
+                Range("Q2").Value = FormatPercent(greatest_percent_increase)
+                Range("P2").Value = greatest_percent_increase_ticker
+                Range("Q3").Value = FormatPercent(greatest_percent_decrease)
+                Range("P3").Value = greatest_percent_decrease_ticker
+                Range("Q4").Value = greatest_total_volume
+                Range("P4").Value = greatest_total_volume_ticker
             
-                'Prepare for next stock
-                greatest_percent_increase_ticker = " "
-                greatest_percent_increase = 0
-                greatest_percent_decrease_ticker = " "
-                greatest_percent_decrease = 0
-                greatest_total_volume_ticker = " "
-                greatest_total_volume = 0
     Next ws
 
 End Sub
